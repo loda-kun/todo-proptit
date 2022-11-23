@@ -3,6 +3,7 @@ package net.proptit.compose
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -25,7 +26,6 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -33,10 +33,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import net.proptit.compose.model.ActionEvent
 import net.proptit.compose.model.Todo
 import net.proptit.compose.ui.theme.ProptitcomposeTheme
 
 class MainActivity : ComponentActivity() {
+    val mainVimel: MainVimel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,18 +52,25 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    HomeScreen()
+                    val state by mainVimel.state.collectAsState()
+                    ListTodo(
+                        state.todos,
+                        onEvent = mainVimel::onEvent
+                    )
                 }
             }
         }
     }
 }
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen() {
+fun ListTodo(
+    todos: List<Todo>,
+    onEvent: (ActionEvent) -> Unit,
+) {
     var text by remember { mutableStateOf("type something") }
-    val todos = remember { mutableStateListOf(Todo("Example")) }
 
     Column(
         modifier = Modifier
@@ -75,7 +84,7 @@ fun HomeScreen() {
         TextField(value = text, onValueChange = { text = it })
 
         Button(onClick = {
-            todos.add(Todo(text))
+            onEvent(ActionEvent.Add(text))
         }) {
             Text(text = "Add")
         }
@@ -104,7 +113,7 @@ fun HomeScreen() {
                         imageVector = Icons.Outlined.Delete,
                         contentDescription = "delete it",
                         modifier = Modifier.clickable {
-                            todos.remove(todo)
+                            onEvent(ActionEvent.Remove(todo))
                         }
                     )
                 }
@@ -117,7 +126,5 @@ fun HomeScreen() {
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun HomeScreenPreview() {
-    ProptitcomposeTheme {
-        HomeScreen()
-    }
+
 }
